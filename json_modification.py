@@ -1,7 +1,7 @@
 import json
 import codecs
 import os
-
+import ast
 
 # assign directory
 info_to_write =''
@@ -55,12 +55,43 @@ def get_hierarchical_data(index_name):
                                     _meta_order=f'"{_meta_l1_order}.{_meta_l2_order}.{nested_l2["order"]}"'
                                     _meta_label=f'"{nested_l2["label"]}"'
                                     # print (_meta_name, _meta_order,_meta_label)
+    #Opportunities
     if index_name in ('opportunities'):
         _meta_main_link='"deals/$id$"'
-    elif index_name in ('opportunities_acts'):
+    elif index_name in ('opportunities_positions','opportunities_payments_sub','opportunities_payments',
+    'opportunities_other_costs','opportunities_contact_persons','opportunities_acts_sub','opportunities_acts',
+    'opportunity_notes'):
         _meta_main_link='"deals/$opportunity_id$"'
     elif index_name in ('opportunities_products'):
         _meta_main_link='"deals/$opportunity_id$/product/$id$"'
+    #Contracts
+    elif index_name in ('contracts'):
+        _meta_main_link='"contracts/$id$"'
+    elif index_name in ('contracts_positions','contracts_payments_sub','contracts_payments',
+    'contracts_other_costs','contracts_contact_persons','contracts_acts_sub','contracts_acts','contract_notes'):
+        _meta_main_link='"contracts/$contract_id$"'
+    elif index_name in ('contracts_products'):
+        _meta_main_link='"contracts/$contract_id$/product/$id$"'
+    ##Company ID
+    elif index_name in ('addresses','company_notes','company_positions'):
+        _meta_main_link='"organizations/$company_id$"'
+    elif index_name in ('companies'):
+        _meta_main_link='"organizations/$id$"'
+    #Marketing Event
+    elif index_name in ('marketing_events'):
+        _meta_main_link='"marketing-events/$id$"'
+    elif index_name in ('marketing_events_budget','marketing_events_positions','marketing_events_program_items'):
+        _meta_main_link='"marketing-events/$marketing_event_id$"'
+    #Person
+    elif index_name in ('persons_addresses','persons_contact_informations','persons_employment_informations','persons_positions'):
+        _meta_main_link='"physical-person/$contact_person_id$"'
+    ##Tasks
+    elif index_name in ('tasks'):
+        _meta_main_link='"tasks/$id$"'
+    elif index_name in ('task_notes','persons_contact_informations','persons_employment_informations','persons_positions'):
+        _meta_main_link='"tasks/$task_id$"'
+    #Leads
+
     _meta=f'"_meta":{{"name":"{_meta_name}","label":{_meta_label},"order":{_meta_order},"main_link":{_meta_main_link} }}'      
     return _meta
 
@@ -78,15 +109,19 @@ def get_view_data(index_name,key_name):
     meta_base_params=''
     meta_filter_type_code=''
     meta_sort_params=''
+    meta_link=''
     for index in views_json['payload']['tables']:
         if index["name"]==index_name:
            for attribute in index['attributes']:
                 if attribute["name"]==key_name:
                     meta_label=f'"label":"{attribute["label"]}"'
                     meta_base_params=f'"base_params":"{{\\"order\\":{attribute["order"]},\\"visible\\":{attribute["visible"]}}}"'
+                    ##Странное поведение, наоборот пропускает null
+                    if '/' in str({attribute["link"]}):
+                        meta_link=f',"link":"{attribute["link"]}"'
                     meta_filter_type_code=f'"filter_type_code":"{attribute["filterType"]}"'
                     meta_sort_params=f'"sort_params":"{{\\"sortable\\":{attribute["sortable"]},\\"type\\":\\"{attribute["sortType"]}\\",\\"order\\":{attribute["sortOrder"]}}}"'
-                    meta=f'"meta":{{ {meta_label}, {meta_base_params}, {meta_filter_type_code}, {meta_sort_params} }}'
+                    meta=f'"meta":{{ {meta_label} {meta_link}, {meta_base_params}, {meta_filter_type_code}, {meta_sort_params} }}'
     return meta
 
 # print(get_hierarchical_data('persons_positions', 'main'))
@@ -121,10 +156,16 @@ for filename in os.listdir(directory):
                 view_data = get_view_data(filename.replace('.txt',''),key)
                 if view_data !='':
                     info_to_write=info_to_write[:-1] + ', ' + get_view_data(filename.replace('.txt',''),key) + '}'
-    info_to_write=info_to_write+'}'*3        
-    completeName = os.path.join(directory, file_to_write)   
+    if filename.replace('.txt','') !='marketing_events':
+        info_to_write=info_to_write+'}'*3        
+    completeName = os.path.join('c:/Users/apetrov/Desktop/Changes/FOR_TCRM-15689/New', file_to_write)
+    print(filename)
+    # print (info_to_write)
+    # ast.literal_eval(info_to_write)
     out_file = codecs.open(completeName, "w", encoding='utf-8')
     out_file.write(info_to_write)
     out_file.close()
 
- 
+
+### order
+### прописать link
